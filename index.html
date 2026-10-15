@@ -450,6 +450,38 @@
       text-align: center;
     }
     .waitlist-done strong { color: var(--emerald); }
+    .waitlist-share {
+      margin-top: 1.1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #0d3b26;
+      font-size: 0.82rem;
+      color: #a7b8ad;
+      line-height: 1.6;
+    }
+    .waitlist-share-link {
+      margin: 0.6rem auto 0;
+      padding: 0.55rem 0.8rem;
+      background: #020d08;
+      border: 1px solid #0d3b26;
+      border-radius: 8px;
+      color: var(--emerald);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.78rem;
+      word-break: break-all;
+      max-width: 100%;
+    }
+    .waitlist-copy {
+      margin-top: 0.7rem;
+      padding: 0.45rem 1.1rem;
+      background: transparent;
+      border: 1px solid var(--emerald);
+      border-radius: 8px;
+      color: var(--emerald);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .waitlist-copy:hover { background: var(--emerald); color: #020d08; }
     .notify-alt {
       position: relative;
       margin-top: 0.8rem;
@@ -859,7 +891,57 @@
         "https://lwnmpwgeokob3e6jorgbkwqxw40hlnol.lambda-url.us-east-1.on.aws/";
       var form = document.getElementById("waitlist-form");
       var status = document.getElementById("waitlist-status");
+      var params = new URLSearchParams(window.location.search);
+      var ref = params.get("ref") || "";
+      var verified = params.get("verified");
+      var code = params.get("code") || "";
       if (!form) return;
+
+      // Returning from the confirmation link — show queue position.
+      if (verified === "1") {
+        status.textContent = "Email confirmed — you're in the queue.";
+        status.className = "waitlist-status ok";
+        if (code) {
+          fetch(ENDPOINT + "status?code=" + encodeURIComponent(code))
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (data.success && data.position) {
+                form.outerHTML =
+                  '<div class="waitlist-done">' +
+                  "<strong>You're #" + data.position + " in line.</strong><br>" +
+                  data.referralCount + " friend" +
+                  (data.referralCount === 1 ? "" : "s") +
+                  " joined through you." +
+                  '<div class="waitlist-share">' +
+                  "Skip the queue — every confirmed friend moves you up 10 places:" +
+                  '<div class="waitlist-share-link">' + data.referralLink + "</div>" +
+                  '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
+                  data.referralLink + "');this.textContent='Copied!'\">" +
+                  "Copy link</button></div></div>";
+              }
+            })
+            .catch(function () {});
+        }
+      }
+
+      function renderDone(link) {
+        var share =
+          link
+            ? '<div class="waitlist-share">' +
+              "Skip the queue — every friend who joins moves you up 10 places:" +
+              '<div class="waitlist-share-link">' + link + "</div>" +
+              '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
+              link + "');this.textContent='Copied!'\">" +
+              "Copy link</button></div>"
+            : "";
+        return (
+          '<div class="waitlist-done">' +
+          "<strong>You're on the list.</strong><br>" +
+          "Check your inbox to confirm your email." +
+          share +
+          "</div>"
+        );
+      }
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -879,16 +961,16 @@
         fetch(ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email, website: form.website.value }),
+          body: JSON.stringify({
+            email: email,
+            website: form.website.value,
+            ref: ref,
+          }),
         })
           .then(function (res) { return res.json(); })
           .then(function (data) {
             if (data.success) {
-              form.outerHTML =
-                '<div class="waitlist-done">' +
-                "<strong>You're on the list.</strong><br>" +
-                "We'll email you the moment Tijarah goes live." +
-                "</div>";
+              form.outerHTML = renderDone(data.referralLink);
             } else {
               throw new Error(data.message || "Subscribe failed");
             }
