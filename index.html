@@ -490,6 +490,141 @@
     }
     .notify-alt a { color: var(--emerald); text-decoration: none; }
     .notify-alt a:hover { text-decoration: underline; }
+    .waitlist-check {
+      margin-top: 0.7rem;
+      font-size: 0.72rem;
+      color: #4a5d52;
+      text-align: center;
+    }
+    .waitlist-check-toggle {
+      background: none;
+      border: none;
+      color: var(--slate);
+      font-size: 0.72rem;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.2s ease;
+    }
+    .waitlist-check-toggle:hover { color: var(--emerald); }
+    .waitlist-check-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.7rem;
+      width: 100%;
+    }
+    .waitlist-check-form input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.55rem 0.8rem;
+      background: #020d08;
+      border: 1px solid #0d3b26;
+      border-radius: 8px;
+      color: #f8fafc;
+      font-size: 0.78rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .waitlist-check-form input:focus {
+      outline: none;
+      border-color: var(--emerald);
+    }
+    .waitlist-check-form button {
+      padding: 0.55rem 1rem;
+      background: transparent;
+      border: 1px solid var(--emerald);
+      border-radius: 8px;
+      color: var(--emerald);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+      white-space: nowrap;
+    }
+    .waitlist-check-form button:hover { background: var(--emerald); color: #020d08; }
+
+    /* ── Verify toast: looping-light border notification ── */
+    .verify-toast {
+      position: fixed;
+      top: 1.2rem;
+      left: 50%;
+      width: min(92vw, 26rem);
+      padding: 1.5px;
+      border-radius: 18px;
+      overflow: hidden;
+      z-index: 999;
+      cursor: pointer;
+      opacity: 0;
+      transform: translate(-50%, -140%);
+      transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease;
+      box-shadow: 0 10px 44px rgba(52, 211, 153, 0.22), 0 4px 16px rgba(0, 0, 0, 0.55);
+    }
+    .verify-toast::before {
+      content: "";
+      position: absolute;
+      inset: -120%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        transparent 255deg,
+        rgba(52, 211, 153, 0.25) 290deg,
+        var(--emerald) 322deg,
+        #eafff5 336deg,
+        var(--emerald) 350deg,
+        transparent 360deg
+      );
+      animation: toastLoop 3.2s linear infinite;
+    }
+    @keyframes toastLoop { to { transform: rotate(360deg); } }
+    .verify-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .verify-toast.hide { opacity: 0; transform: translate(-50%, -140%); }
+    .verify-toast-inner {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      background: #04150d;
+      border-radius: 16.5px;
+      padding: 0.95rem 1.1rem;
+    }
+    .verify-toast-icon {
+      flex: 0 0 auto;
+      width: 2.15rem;
+      height: 2.15rem;
+      border-radius: 50%;
+      background: rgba(52, 211, 153, 0.14);
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .verify-toast-icon svg {
+      width: 1.05rem;
+      height: 1.05rem;
+      stroke: var(--emerald);
+    }
+    .verify-toast-text { flex: 1; text-align: left; line-height: 1.45; }
+    .verify-toast-text strong {
+      display: block;
+      color: var(--emerald);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+    .verify-toast-text span { font-size: 0.78rem; color: var(--slate); }
+    .verify-toast-close {
+      flex: 0 0 auto;
+      background: none;
+      border: none;
+      color: #4a5d52;
+      font-size: 1.15rem;
+      cursor: pointer;
+      padding: 0.2rem;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+    .verify-toast-close:hover { color: var(--emerald); }
+    @media (prefers-reduced-motion: reduce) {
+      .verify-toast::before { animation: none; }
+      .verify-toast { transition: opacity 0.3s ease; }
+    }
 
     /* ── Mobile performance: cut GPU-heavy effects ─────── */
     @media (pointer: coarse), (max-width: 768px) {
@@ -711,6 +846,11 @@
           <button type="submit">Notify me</button>
           <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite"></p>
         </form>
+        <div class="waitlist-check" id="waitlist-check">
+          <button type="button" class="waitlist-check-toggle" id="waitlist-check-toggle">
+            Already joined? Check your position
+          </button>
+        </div>
         <p class="notify-alt">Prefer email? <a href="mailto:support@tijarah.pk">support@tijarah.pk</a></p>
       </div>
     </section>
@@ -901,11 +1041,64 @@
       if (verified === "1") {
         status.textContent = "Email confirmed — you're in the queue.";
         status.className = "waitlist-status ok";
+
+        var toast = document.createElement("div");
+        toast.className = "verify-toast";
+        toast.setAttribute("role", "status");
+        toast.innerHTML =
+          '<div class="verify-toast-inner">' +
+          '<div class="verify-toast-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>' +
+          '<div class="verify-toast-text"><strong class="vt-title">Email confirmed.</strong>' +
+          '<span class="vt-sub">Checking your spot in line…</span></div>' +
+          '<button type="button" class="verify-toast-close" aria-label="Dismiss">&times;</button>' +
+          "</div>";
+        document.body.appendChild(toast);
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () { toast.classList.add("show"); });
+        });
+        var dismissTimer = setTimeout(dismissToast, 14000);
+        function dismissToast() {
+          clearTimeout(dismissTimer);
+          toast.classList.remove("show");
+          toast.classList.add("hide");
+          setTimeout(function () { toast.remove(); }, 800);
+        }
+        toast
+          .querySelector(".verify-toast-close")
+          .addEventListener("click", function (e) {
+            e.stopPropagation();
+            dismissToast();
+          });
+        toast.addEventListener("click", function () {
+          dismissToast();
+          var sec = document.querySelector(".notify");
+          if (sec) sec.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+
+        // Clean ?verified&code from the URL so a refresh doesn't re-fire the toast.
+        if (window.history.replaceState) {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+
+        function updateToast(title, sub) {
+          var t = toast.querySelector(".vt-title");
+          var s = toast.querySelector(".vt-sub");
+          if (t) t.textContent = title;
+          if (s) s.textContent = sub;
+        }
+
         if (code) {
           fetch(ENDPOINT + "status?code=" + encodeURIComponent(code))
             .then(function (res) { return res.json(); })
             .then(function (data) {
               if (data.success && data.position) {
+                updateToast(
+                  "You're #" + data.position + " in line.",
+                  data.referralCount +
+                    " friend" +
+                    (data.referralCount === 1 ? "" : "s") +
+                    " joined through you — tap for your share link."
+                );
                 form.outerHTML =
                   '<div class="waitlist-done">' +
                   "<strong>You're #" + data.position + " in line.</strong><br>" +
@@ -913,22 +1106,93 @@
                   (data.referralCount === 1 ? "" : "s") +
                   " joined through you." +
                   '<div class="waitlist-share">' +
-                  "Skip the queue — every confirmed friend moves you up 10 places:" +
+                  "Skip the queue — share your link on WhatsApp, Facebook, or anywhere. " +
+                  "Every friend who joins and confirms moves you up 10 places:" +
                   '<div class="waitlist-share-link">' + data.referralLink + "</div>" +
                   '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
                   data.referralLink + "');this.textContent='Copied!'\">" +
                   "Copy link</button></div></div>";
+              } else {
+                updateToast("Email confirmed.", "You're on the list — welcome aboard.");
               }
             })
-            .catch(function () {});
+            .catch(function () {
+              updateToast("Email confirmed.", "You're on the list — welcome aboard.");
+            });
+        } else {
+          updateToast("Email confirmed.", "You're on the list — welcome aboard.");
         }
+      }
+
+      // "Already joined? Check your position" — accepts the bare code or
+      // the full share link; extracts the ?ref= code if a URL was pasted.
+      var checkBox = document.getElementById("waitlist-check");
+      var checkToggle = document.getElementById("waitlist-check-toggle");
+      if (checkBox && checkToggle) {
+        checkToggle.addEventListener("click", function () {
+          checkBox.innerHTML =
+            '<form class="waitlist-check-form" id="waitlist-check-form" novalidate>' +
+            '<input type="text" id="waitlist-check-input" placeholder="Paste your link or code" autocomplete="off" />' +
+            '<button type="submit">Check</button>' +
+            "</form>" +
+            '<p class="waitlist-status" id="waitlist-check-status"></p>';
+          var cf = document.getElementById("waitlist-check-form");
+          var cinput = document.getElementById("waitlist-check-input");
+          var cstatus = document.getElementById("waitlist-check-status");
+          cinput.focus();
+          cf.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var raw = cinput.value.trim();
+            var m = raw.match(/[?&]ref=([A-Za-z0-9_-]+)/);
+            var codeIn = m ? m[1] : raw;
+            if (!/^[A-Za-z0-9_-]{5,}$/.test(codeIn)) {
+              cstatus.textContent =
+                "That doesn't look right — paste the link from your welcome email.";
+              cstatus.className = "waitlist-status err";
+              return;
+            }
+            cstatus.textContent = "Checking…";
+            cstatus.className = "waitlist-status";
+            fetch(ENDPOINT + "status?code=" + encodeURIComponent(codeIn))
+              .then(function (res) { return res.json(); })
+              .then(function (data) {
+                if (data.success && data.position) {
+                  form.outerHTML =
+                    '<div class="waitlist-done">' +
+                    "<strong>You're #" + data.position + " in line.</strong><br>" +
+                    data.referralCount +
+                    " friend" +
+                    (data.referralCount === 1 ? "" : "s") +
+                    " joined through you." +
+                    '<div class="waitlist-share">' +
+                    "Skip the queue — share your link on WhatsApp, Facebook, or anywhere. " +
+                    "Every friend who joins and confirms moves you up 10 places:" +
+                    '<div class="waitlist-share-link">' + data.referralLink + "</div>" +
+                    '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
+                    data.referralLink + "');this.textContent='Copied!'\">" +
+                    "Copy link</button></div></div>";
+                  checkBox.innerHTML = "";
+                } else {
+                  cstatus.textContent =
+                    "No spot found for that code — double-check the link in your welcome email.";
+                  cstatus.className = "waitlist-status err";
+                }
+              })
+              .catch(function () {
+                cstatus.textContent =
+                  "Something went wrong — please try again in a moment.";
+                cstatus.className = "waitlist-status err";
+              });
+          });
+        });
       }
 
       function renderDone(link) {
         var share =
           link
             ? '<div class="waitlist-share">' +
-              "Skip the queue — every friend who joins moves you up 10 places:" +
+              "Skip the queue — share your link on WhatsApp, Facebook, or anywhere. " +
+              "Every friend who joins and confirms moves you up 10 places:" +
               '<div class="waitlist-share-link">' + link + "</div>" +
               '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
               link + "');this.textContent='Copied!'\">" +
