@@ -1068,6 +1068,7 @@
       var status = document.getElementById("waitlist-status");
       var params = new URLSearchParams(window.location.search);
       var ref = params.get("ref") || "";
+      var ticket = params.get("ticket") || "";
       var verified = params.get("verified");
       var code = params.get("code") || "";
       if (!form) return;
@@ -1222,7 +1223,27 @@
         });
       }
 
-      function renderDone(link) {
+      function goldenBlock(data) {
+        if (!data || !data.goldenTicketLink) return "";
+        var used = data.goldenTicketUsed;
+        return (
+          '<div class="waitlist-share">' +
+          '<div class="waitlist-share-link">' +
+          (data.tier ? data.tier + " · " : "") +
+          (data.position ? "#" + data.position + " in line" : "") +
+          "</div>" +
+          (used
+            ? "Your Golden Ticket is spent — it already skipped someone in."
+            : "Golden Ticket — gift ONE friend a skip past the whole queue:" +
+              '<div class="waitlist-share-link">' + data.goldenTicketLink + "</div>" +
+              '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
+              data.goldenTicketLink + "');this.textContent='Copied!'\">" +
+              "Copy ticket</button>") +
+          "</div>"
+        );
+      }
+
+      function renderDone(link, data) {
         var share =
           link
             ? '<div class="waitlist-share">' +
@@ -1238,6 +1259,7 @@
           "<strong>You're on the list.</strong><br>" +
           "Check your inbox to confirm your email." +
           share +
+          goldenBlock(data) +
           "</div>"
         );
       }
@@ -1264,12 +1286,13 @@
             email: email,
             website: form.website.value,
             ref: ref,
+            ticket: ticket,
           }),
         })
           .then(function (res) { return res.json(); })
           .then(function (data) {
             if (data.success) {
-              form.outerHTML = renderDone(data.referralLink);
+              form.outerHTML = renderDone(data.referralLink, data);
             } else {
               throw new Error(data.message || "Subscribe failed");
             }
