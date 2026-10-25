@@ -663,6 +663,35 @@
     .footer .legal-links a:hover { color: var(--emerald); }
     .footer .legal-links span { color: #1e4d38; }
 
+    /* ── Maker badge — "built by" chip, same glass language as .soc ── */
+    .maker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.45rem 1.1rem 0.45rem 0.55rem;
+      margin-bottom: 1.5rem;
+      border-radius: 999px;
+      background: rgba(52, 211, 153, 0.06);
+      border: 1px solid rgba(52, 211, 153, 0.22);
+      color: var(--slate);
+      font-size: 0.82rem;
+      text-decoration: none;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .maker img {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: block;
+    }
+    .maker strong { color: #f8fafc; font-weight: 600; }
+    .maker .maker-cta { color: var(--emerald); font-weight: 600; }
+    .maker:hover {
+      border-color: rgba(52, 211, 153, 0.55);
+      box-shadow: 0 0 22px rgba(52, 211, 153, 0.2);
+      transform: translateY(-2px);
+    }
+
     /* ── Social links — glass chips echoing the icon medallions ── */
     .socials {
       display: flex;
@@ -856,6 +885,12 @@
     </section>
 
     <div class="footer rise">
+      <a class="maker" href="https://shevris.com/#inside-tijarah" target="_blank" rel="noopener"
+         aria-label="Built by Shevris Technologies — see the interactive Tijarah demo">
+        <img src="https://shevris.com/avatar-square-1024.png" alt="" width="28" height="28" />
+        <span>Built by <strong>Shevris Technologies</strong></span>
+        <span class="maker-cta">take the tour &rarr;</span>
+      </a>
       <div class="socials">
         <a class="soc" href="https://instagram.com/tijarah.pk_official" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
         <a class="soc" href="https://www.facebook.com/tijarah.pk.official" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
