@@ -1127,7 +1127,12 @@
         }
 
         if (code) {
-          fetch(ENDPOINT + "status?code=" + encodeURIComponent(code))
+          // Ticket recovery: remember the subscriber's own email so /status
+          // can prove ownership and hand back their ticket link.
+          var ownerEmail = "";
+          try { ownerEmail = sessionStorage.getItem("tj_wl_email") || ""; } catch (e) {}
+          fetch(ENDPOINT + "status?code=" + encodeURIComponent(code) +
+            (ownerEmail ? "&email=" + encodeURIComponent(ownerEmail) : ""))
             .then(function (res) { return res.json(); })
             .then(function (data) {
               if (data.success && data.position) {
@@ -1155,9 +1160,9 @@
                     tier: data.tier,
                     position: data.position,
                     goldenTicketUsed: data.goldenTicketUsed,
-                    goldenTicketLink: myTicket
-                      ? "https://tijarah.pk/?ticket=" + myTicket
-                      : "",
+                    goldenTicketLink:
+                      data.goldenTicketLink ||
+                      (myTicket ? "https://tijarah.pk/?ticket=" + myTicket : ""),
                   }) +
                   "</div>";
               } else {
@@ -1201,7 +1206,10 @@
             }
             cstatus.textContent = "Checking…";
             cstatus.className = "waitlist-status";
-            fetch(ENDPOINT + "status?code=" + encodeURIComponent(codeIn))
+            var ownerEmail2 = "";
+            try { ownerEmail2 = sessionStorage.getItem("tj_wl_email") || ""; } catch (e) {}
+            fetch(ENDPOINT + "status?code=" + encodeURIComponent(codeIn) +
+              (ownerEmail2 ? "&email=" + encodeURIComponent(ownerEmail2) : ""))
               .then(function (res) { return res.json(); })
               .then(function (data) {
                 if (data.success && data.position) {
@@ -1218,7 +1226,14 @@
                     '<div class="waitlist-share-link">' + data.referralLink + "</div>" +
                     '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
                     data.referralLink + "');this.textContent='Copied!'\">" +
-                    "Copy link</button></div></div>";
+                    "Copy link</button></div>" +
+                    goldenBlock({
+                      tier: data.tier,
+                      position: data.position,
+                      goldenTicketUsed: data.goldenTicketUsed,
+                      goldenTicketLink: data.goldenTicketLink || "",
+                    }) +
+                    "</div>";
                   checkBox.innerHTML = "";
                 } else {
                   cstatus.textContent =
@@ -1286,6 +1301,7 @@
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         var email = form.email.value.trim();
+        try { sessionStorage.setItem("tj_wl_email", email); } catch (e) {}
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
           status.textContent = "Please enter a valid email address.";
           status.className = "waitlist-status err";
