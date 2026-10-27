@@ -1071,6 +1071,9 @@
       var ticket = params.get("ticket") || "";
       var verified = params.get("verified");
       var code = params.get("code") || "";
+      // Your own Golden Ticket — only present on the verify redirect.
+      var myTicket = params.get("mt") || "";
+      if (!/^[A-Za-z0-9_-]{6,16}$/.test(myTicket)) myTicket = "";
       if (!form) return;
 
       // Returning from the confirmation link — show queue position.
@@ -1147,7 +1150,16 @@
                   '<div class="waitlist-share-link">' + data.referralLink + "</div>" +
                   '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
                   data.referralLink + "');this.textContent='Copied!'\">" +
-                  "Copy link</button></div></div>";
+                  "Copy link</button></div>" +
+                  goldenBlock({
+                    tier: data.tier,
+                    position: data.position,
+                    goldenTicketUsed: data.goldenTicketUsed,
+                    goldenTicketLink: myTicket
+                      ? "https://tijarah.pk/?ticket=" + myTicket
+                      : "",
+                  }) +
+                  "</div>";
               } else {
                 updateToast("Email confirmed.", "You're on the list — welcome aboard.");
               }
@@ -1254,12 +1266,19 @@
               link + "');this.textContent='Copied!'\">" +
               "Copy link</button></div>"
             : "";
+        var hint =
+          data && data.goldenTicketHint
+            ? '<div class="waitlist-share">' +
+              (data.tier ? data.tier + " · #" + data.position + " in line. " : "") +
+              data.goldenTicketHint +
+              "</div>"
+            : "";
         return (
           '<div class="waitlist-done">' +
           "<strong>You're on the list.</strong><br>" +
           "Check your inbox to confirm your email." +
           share +
-          goldenBlock(data) +
+          hint +
           "</div>"
         );
       }
