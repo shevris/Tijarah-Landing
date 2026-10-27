@@ -1127,12 +1127,7 @@
         }
 
         if (code) {
-          // Ticket recovery: remember the subscriber's own email so /status
-          // can prove ownership and hand back their ticket link.
-          var ownerEmail = "";
-          try { ownerEmail = sessionStorage.getItem("tj_wl_email") || ""; } catch (e) {}
-          fetch(ENDPOINT + "status?code=" + encodeURIComponent(code) +
-            (ownerEmail ? "&email=" + encodeURIComponent(ownerEmail) : ""))
+          fetch(ENDPOINT + "status?code=" + encodeURIComponent(code))
             .then(function (res) { return res.json(); })
             .then(function (data) {
               if (data.success && data.position) {
@@ -1159,10 +1154,11 @@
                   goldenBlock({
                     tier: data.tier,
                     position: data.position,
+                    hasGoldenTicket: data.hasGoldenTicket,
                     goldenTicketUsed: data.goldenTicketUsed,
-                    goldenTicketLink:
-                      data.goldenTicketLink ||
-                      (myTicket ? "https://tijarah.pk/?ticket=" + myTicket : ""),
+                    goldenTicketLink: myTicket
+                      ? "https://tijarah.pk/?ticket=" + myTicket
+                      : "",
                   }) +
                   "</div>";
               } else {
@@ -1206,10 +1202,7 @@
             }
             cstatus.textContent = "Checking…";
             cstatus.className = "waitlist-status";
-            var ownerEmail2 = "";
-            try { ownerEmail2 = sessionStorage.getItem("tj_wl_email") || ""; } catch (e) {}
-            fetch(ENDPOINT + "status?code=" + encodeURIComponent(codeIn) +
-              (ownerEmail2 ? "&email=" + encodeURIComponent(ownerEmail2) : ""))
+            fetch(ENDPOINT + "status?code=" + encodeURIComponent(codeIn))
               .then(function (res) { return res.json(); })
               .then(function (data) {
                 if (data.success && data.position) {
@@ -1230,8 +1223,9 @@
                     goldenBlock({
                       tier: data.tier,
                       position: data.position,
+                      hasGoldenTicket: data.hasGoldenTicket,
                       goldenTicketUsed: data.goldenTicketUsed,
-                      goldenTicketLink: data.goldenTicketLink || "",
+                      goldenTicketLink: "",
                     }) +
                     "</div>";
                   checkBox.innerHTML = "";
@@ -1251,7 +1245,7 @@
       }
 
       function goldenBlock(data) {
-        if (!data || !data.goldenTicketLink) return "";
+        if (!data || (!data.hasGoldenTicket && !data.goldenTicketUsed)) return "";
         var used = data.goldenTicketUsed;
         return (
           '<div class="waitlist-share">' +
@@ -1261,11 +1255,13 @@
           "</div>" +
           (used
             ? "Your Golden Ticket is spent — it already skipped someone in."
-            : "Golden Ticket — gift ONE friend a skip past the whole queue:" +
-              '<div class="waitlist-share-link">' + data.goldenTicketLink + "</div>" +
-              '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
-              data.goldenTicketLink + "');this.textContent='Copied!'\">" +
-              "Copy ticket</button>") +
+            : data.goldenTicketLink
+              ? "Golden Ticket — gift ONE friend a skip past the whole queue:" +
+                '<div class="waitlist-share-link">' + data.goldenTicketLink + "</div>" +
+                '<button type="button" class="waitlist-copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' +
+                data.goldenTicketLink + "');this.textContent='Copied!'\">" +
+                "Copy ticket</button>"
+              : "You hold a Golden Ticket — your gift link is in your confirmation email.") +
           "</div>"
         );
       }
@@ -1301,7 +1297,6 @@
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         var email = form.email.value.trim();
-        try { sessionStorage.setItem("tj_wl_email", email); } catch (e) {}
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
           status.textContent = "Please enter a valid email address.";
           status.className = "waitlist-status err";
